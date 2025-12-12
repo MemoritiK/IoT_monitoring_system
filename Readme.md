@@ -11,7 +11,6 @@ This project is designed as a showcase and **does not require user authenticatio
 * [Setup & Installation](#setup--installation)
 * [Docker](#usage-via-docker)
 * [Configuration](#configuration)
-* [Usage](#usage)
 * [Notes](#notes)
 
 ## Architecture
@@ -148,11 +147,6 @@ Open your browser at [http://localhost:8000](http://localhost:8000) to view the 
 * **Device Data**: Simulated via `simulator.py`.
 * **Frontend API Endpoint**: `http://localhost:8000/api` (configurable in `api.js`).
 
-## Usage
-
-1. Start the backend (with simulator) and frontend via Docker Compose.
-2. Open [http://localhost:8000](http://localhost:8000) to view the dashboard.
-3. Device statuses update automatically based on the last timestamp received.
 
 ## Notes
 
