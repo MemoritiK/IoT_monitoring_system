@@ -5,15 +5,24 @@ from database_sql import create_db_and_tables
 from database_influx import init_inlfux
 from fastapi.middleware.cors import CORSMiddleware
 from simulator import start_simulation
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from pathlib import Path
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    start_simulation()          # START simulator
+    start_simulation()          
     app.state.write_api, app.state.query_api = init_inlfux()
     create_db_and_tables()
     yield
 
 app = FastAPI(lifespan=lifespan)
+app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+
+@app.get("/", response_class=HTMLResponse)
+def serve_home():
+    index_path = Path("templates/index.html")
+    return index_path.read_text()
 
 app.add_middleware(
     CORSMiddleware,

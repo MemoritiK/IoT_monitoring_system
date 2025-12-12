@@ -74,7 +74,28 @@ def query_data(data: ReadingData, query_api):
 
     return table
 
-    
+def query_last_timestamp_influx(device_id: str, query_api):
+    query = f'''
+        from(bucket: "{bucket}")
+        |> range(start: -24h)
+        |> filter(fn: (r) => r["device_id"] == "{device_id}")
+        |> last()
+    '''
+    tables = query_api.query(org=org, query=query)
+
+    for table in tables:
+        for record in table.records:
+            last_ts = record.get_time()
+            if last_ts is None:
+                return "inactive"
+        
+            diff_minutes = (datetime.now(timezone.utc) - last_ts).total_seconds() / 60
+        
+            return "active" if diff_minutes <= 1 else "inactive"
+    return None
+
+
+
 @router.post("/")
 def record_data(data: WritingData, write_api = Depends(get_write_api)):
     if not data:
@@ -84,7 +105,8 @@ def record_data(data: WritingData, write_api = Depends(get_write_api)):
 
 
 @router.post("/read/")
-def read_data(data:ReadingData, query_api = Depends(get_query_api)):
+def read_data(data:ReadingData, query_api = Depends(get_query_api) ):
     if not data:
             raise HTTPException(status_code=400, detail="No data provided")
     return query_data(data, query_api)
+

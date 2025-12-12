@@ -44,7 +44,7 @@ def generate_and_send(device):
         except Exception as e:
             print(f"❌ Failed send: {e}")
 
-        time.sleep(30)  # send every 30 sec (change to 600 for 10 min)
+        time.sleep(100)  # send every 30 sec (change to 600 for 10 min)
         
 
 def start_simulation():
