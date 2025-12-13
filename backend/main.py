@@ -4,17 +4,15 @@ from modules import time_series, devices
 from database_sql import create_db_and_tables
 from database_influx import init_inlfux
 from fastapi.middleware.cors import CORSMiddleware
-from simulator import start_simulation
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    start_simulation()          
     app.state.write_api, app.state.query_api = init_inlfux()
     create_db_and_tables()
-    yield
+    yield 
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
@@ -26,9 +24,9 @@ def serve_home():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["http://localhost:5173"] for dev frontend
+    allow_origins=["*"],  
     allow_credentials=True,
-    allow_methods=["*"],  # allows GET, POST, OPTIONS, etc.
+    allow_methods=["*"],  
     allow_headers=["*"],
 )
 

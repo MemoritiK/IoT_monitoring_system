@@ -1,8 +1,11 @@
 import influxdb_client
 import os
+from dotenv import load_dotenv
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+if os.path.exists('.env'):
+    load_dotenv()
 
 token = os.getenv("INFLUX_TOKEN")
 url = "https://us-east-1-1.aws.cloud2.influxdata.com"

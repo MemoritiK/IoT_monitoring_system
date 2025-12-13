@@ -1,26 +1,33 @@
-from fastapi import APIRouter, HTTPException, Query,Depends
-from typing import Annotated, List
+from datetime import datetime, timezone
+from fastapi import APIRouter, HTTPException
+from typing import Optional
 from sqlmodel import select, SQLModel, Field
 from database_sql import SessionDep
-from .time_series import query_last_timestamp_influx
-from influx_dependencies import get_query_api
 
 router = APIRouter()
 
 class DeviceBase(SQLModel):
     device_id: str = Field(unique=True, index=True)
-    location: str 
-    name: str
-    quantity_measured: str
-    status: str = Field(default="inactive")
+    patient_id: str 
+    model: str
+    vital_type: str
+    last_active: datetime|None = Field(default=None)
 
 class Device(DeviceBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
 class DeviceUpdate(SQLModel):
-    name: str | None = None
-    location: str | None = None
-    status: str | None = None
+    model: str | None = None
+    patient_id: str | None = None
+
+def update_ts(device_id:str, last_ts: datetime,  session:SessionDep):
+    device_old = session.exec(select(Device).where(Device.device_id == device_id)).first()
+    if not device_old:
+        raise HTTPException(status_code=404, detail="Device not found")
+    device_old.last_active=last_ts
+    session.add(device_old)
+    session.commit()
+    session.refresh(device_old)
 
 @router.post("/", response_model=DeviceBase)
 def create_device(device: DeviceBase, session: SessionDep):
@@ -34,10 +41,8 @@ def create_device(device: DeviceBase, session: SessionDep):
     session.refresh(db_device)
     return db_device
 
-@router.get("/", response_model=List[DeviceBase])
-def read_device(
-    session: SessionDep,
-    query_api=Depends(get_query_api)):
+@router.get("/")
+def read_device(session: SessionDep):
     devices = session.exec(select(Device)).all()
     if not devices:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -45,12 +50,18 @@ def read_device(
     response = []
 
     for d in devices:
-        status = query_last_timestamp_influx(d.device_id, query_api)
+        if d.last_active is not None:
+           d.last_active = d.last_active.replace(tzinfo=timezone.utc)
+           diff_minutes = (datetime.now(timezone.utc) - d.last_active).total_seconds() / 60
+           status = "active" if diff_minutes <= 5 else "inactive"
+        else:
+            status = "Unknown"
         response.append({
             "device_id": d.device_id,
-            "name": d.name,
-            "location": d.location,
-            "quantity_measured": d.quantity_measured,
+            "model": d.model,
+            "patient_id": d.patient_id,
+            "vital_type": d.vital_type,
+            "last_active": d.last_active,
             "status": status
         })
 

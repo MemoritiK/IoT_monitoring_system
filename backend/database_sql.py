@@ -15,5 +15,4 @@ def get_session():
     with Session(engine) as session:
         yield session
 
-# type alias for dependency injection
 SessionDep = Annotated[Session, Depends(get_session)]

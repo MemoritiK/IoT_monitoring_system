@@ -1,27 +1,29 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Optional
+from typing import List, Dict
 from pydantic import BaseModel
 from database_influx import  bucket, org
 from influx_dependencies import get_query_api, get_write_api
 from datetime import datetime, timezone
 from influxdb_client import Point, WritePrecision
 
+from database_sql import SessionDep
+from .devices import update_ts
+
 router = APIRouter()
 
 class WritingData(BaseModel):
     measurement: str
-    tag: Dict[str,str]
-    field: Dict[str,float]
-    timestamp: Optional[datetime] = None
+    tag: Dict
+    field: Dict
 
 class ReadingData(BaseModel):
     time_interval: int
     measurement_name: str
-    tag: Dict[str,str]
-    field: List[str]
+    tag: Dict
+    field: List
     
 
-def write_data(data:WritingData, write_api) -> None:
+def write_data(data:WritingData, session, write_api) -> None:
     point = Point(data.measurement)
     
     for key, value in data.tag.items():
@@ -30,11 +32,8 @@ def write_data(data:WritingData, write_api) -> None:
     for key, value in data.field.items():
         point = point.field(key, value)
     
-    if data.timestamp is not None:
-        point = point.time(data.timestamp)
-    else:
-        point = point.time(datetime.now(timezone.utc))
-        
+    point = point.time(datetime.now(timezone.utc))
+    update_ts(data.tag["device_id"],datetime.now(timezone.utc),session)
     write_api.write(bucket=bucket, record=point)
     
 
@@ -74,33 +73,12 @@ def query_data(data: ReadingData, query_api):
 
     return table
 
-def query_last_timestamp_influx(device_id: str, query_api):
-    query = f'''
-        from(bucket: "{bucket}")
-        |> range(start: -24h)
-        |> filter(fn: (r) => r["device_id"] == "{device_id}")
-        |> last()
-    '''
-    tables = query_api.query(org=org, query=query)
-
-    for table in tables:
-        for record in table.records:
-            last_ts = record.get_time()
-            if last_ts is None:
-                return "inactive"
-        
-            diff_minutes = (datetime.now(timezone.utc) - last_ts).total_seconds() / 60
-        
-            return "active" if diff_minutes <= 1 else "inactive"
-    return None
-
-
 
 @router.post("/")
-def record_data(data: WritingData, write_api = Depends(get_write_api)):
+def record_data(data: WritingData, session:SessionDep, write_api = Depends(get_write_api)):
     if not data:
             raise HTTPException(status_code=400, detail="No data provided")
-    write_data(data, write_api)    
+    write_data(data,session, write_api)    
     return {"message": "Recorded!"}, 201
 
 
