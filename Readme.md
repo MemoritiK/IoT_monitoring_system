@@ -1,6 +1,6 @@
 # Time Series Data Management API
 
-A production-ready time series data management system built with FastAPI, InfluxDB, and React. This platform provides a complete solution for collecting, storing, visualizing, and managing time-series data with Docker deployment, with a built-in showcase for medical vitals monitoring.
+A production-ready time series data management system built with FastAPI, InfluxDB (InfluxDB Cloud or self-hosted InfluxDB OSS), and React. This platform provides a complete solution for collecting, storing, visualizing, and managing time-series data with Docker deployment, with a built-in showcase for medical vitals monitoring.
 
 ## Quick Start with Docker
 
