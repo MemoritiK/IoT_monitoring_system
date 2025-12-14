@@ -39,6 +39,11 @@ The system consists of three main components:
 
 Data flows from simulated devices through the backend into InfluxDB, with real-time visualization in the frontend.
 
+## Results
+<img width="907" height="953" alt="image" src="https://github.com/user-attachments/assets/c76e9eeb-6ff2-47b9-899b-ef87c98379a4" />
+<img width="933" height="979" alt="image" src="https://github.com/user-attachments/assets/f76f2679-2214-4f7d-b421-71d523bbccef" />
+<img width="937" height="974" alt="image" src="https://github.com/user-attachments/assets/f23b397f-df92-4c47-b745-83f0f9ca8f68" />
+
 ## API Examples
 
 ### Ingest Data
